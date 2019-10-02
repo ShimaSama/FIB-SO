@@ -1,0 +1,85 @@
+"Soy el proceso 23401"
+Hay dos procesos ya que se hace un fork. El proceso con el PID 23400 es el padre y el proceso 23401 es el hijo.
+
+fork2:
+
+Antes del fork: Soy el proceso 23792
+PADRE: Soy el proceso 23792
+Los DOS: Soy el proceso 23792
+HIJO: Soy el proceso 23793
+Los DOS: Soy el proceso 23793
+Antes del fork tenemos un proceso 23792, que es el actual. Despues del fork, el proceso 23792 pasa a ser padre y su hijo sera el proceso 23793. Primero pasa el padre por el switch y va al caso default. Sale y escribe la 3ra linea. Seguidamente el hijo hara lo mismo pero ira al case 0 ya que el PID=0.
+
+fork3:
+
+Antes del fork: Soy el proceso 23817
+PADRE: Soy el proceso 23817
+Solo lo ejecuta el padre: Soy el proceso 23817
+HIJO: Soy el proceso 23818
+
+Es lo mismo que el caso anterior, pero hay un exit despues del caso pid=0 y, por lo tanto, no se ejecuta el codigo que va a continuacion.
+
+fork4:
+Antes del fork: Soy el proceso 23886
+PADRE: Soy el proceso 23886
+Solo lo ejecuta el padre: Soy el proceso 23886 //lo mismo que el caso anterior
+HIJO: Soy el proceso 23887
+HIJO acaba: Soy el proceso 23887
+
+Primero el padre acaba y despues, el hijo acaba. El padre acaba la ejecucion antes que el hijo ya que el hijo. Para que el hijo acabe antes movemos el bucle vacio al caso default y incrementamos las iteraciones a 1000000.
+
+fork5:
+Antes del fork: Soy el proceso 23914 //Es el padre porque aun no se a echo el fork
+PADRE: Soy el proceso 23914 //Entra al case default del switch porq el pid!=0 (padre)
+HIJO: Soy el proceso 23915 //El hijo entra por el case pid=0
+HIJO:La variable_global vale A y la local a //hijo escribe antes esta linea porq hay un waitpid
+PADRE:La variable_global vale A y la local a //padre tarda mas por el waitpid (espera el hijo)
+Solo lo ejecuta el padre: Soy el proceso 23914 //el padre porque en case=0 (hijo) hay un exit
+
+Emos añadido:  variable_global='B';
+                variable_local='b';
+                
+                al case=0.
+            
+            
+fork6:
+La primera linea es la de antes del fork. Despues:
+PADRE: Soy el proceso 1568
+HIJO: Soy el proceso 1569
+Seguidamente hay 200.000 lineas (100.000 padre y 100.000 hijo que se van alternando). La primera de estas lineas PADRE:La variable_global vale b. Cada 10.000 lineas se incrementa la variable_global y se van alternando padre e hijo. Casi llegando al final aparece:
+Solo lo ejecuta el hijo: Soy el proceso 1569. A partir de alli no aparecen mas hijos. Y, al final aparece:
+Solo lo ejecuta el padre: Soy el proceso 1697. 
+
+No, como los bucles son muy grandes y los dos proceos son lentos, es normal que se mezlen a la vez y la mezcla que se obtiene es random.
+
+
+fork7:
+
+En la funcion Escribe_variables como no se pasan parametros y la variable local esta declarada despues del main aparece como undecleared. 
+No tiene nada que ver con los procesos ya que cuando se hace un fork todos los registros y la pila son copiados al hijo. 
+Para modificarlo emos añadido un parametro(char variable_local) a la funcion Escribe_variables.
+
+exec1:
+Primero el programa nos escribe en pantalla que proceso es el actual. Y despues obtenemos el resultado de ejecutrar el comando -ls -l en el directorio actual. 
+Se nos muestra el PID una sola vez, esto se debe a que al hacer execlp se produce una mutacion y lo que aparece a continuacion no se ejecuta.
+
+exec2:
+
+Soy el proceso: 1814
+Soy el proceso 1814
+Soy el proceso 1815
+
+Primero se escirbe el PID actual y al hacer execlp se ejecuta el ejemplo_fork1(en el cual se escribe el PID actual  y despues hace fork y se escribe el PID de el hijo).
+Se ejecutan dos procesos. 
+
+man: 
+execlp secion 3. 
+grep secion 1.
+
+
+
+
+
+
+
+
