@@ -1,0 +1,2 @@
+signal.c espera a que le llegue alarm, solo con alarm sale del sigsuspend
+signal2.c lo mismo pero reprograma la funcion
