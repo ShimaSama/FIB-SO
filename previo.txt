@@ -1,0 +1,45 @@
+¿Qué valor devuelve la llamada read después de pulsar el ^D?
+ 
+    devuelve 0
+    
+Apunta el comando utilizado en el fichero “previo.txt”
+
+    ./es1 < extra.txt
+    
+¿Cuál es el resultado? ¿Qué operación realiza el comando ‘grep es’?
+
+
+    -rwxr-xr-x 1 tina tina 8440 oct 28 20:36 es1
+    -rw-r--r-- 1 tina tina 1062 abr 19  2013 es1.c
+    -rw-r--r-- 1 tina tina 1418 abr 19  2013 es2.c
+    -rw-r--r-- 1 tina tina  880 nov 13  2013 es3.c
+    -rw-r--r-- 1 tina tina 1089 abr 19  2013 es4.c
+    -rw-r--r-- 1 tina tina   22 ene 27  2012 es5.c
+    -rw-r--r-- 1 tina tina   99 ene 27  2012 es6.c
+    -rw-r--r-- 1 tina tina   93 ene 30  2012 es7.c
+    -rw-r--r-- 1 tina tina  552 ene 30  2012 es8.c
+    
+    grep imprime las lineas que contengan 'es'
+
+Anota  el  comando  en  el  fichero “previo.txt”.
+
+    ps -eo pid,user,command | grep bash
+
+    
+¿Cuántos bytes se escriben en cada caso? ¿Qué diferencias observas en lo que aparece en pantalla?
+
+    Entero en representacion interna. Voy a escribir 4 bytes:
+    B)
+    Entero en formato string. Voy a escribir 5 bytes:
+    10562
+    
+    En el primero se escriben 4 bytes y en el otro 5. La diferencia es que un entero ocupa 4 bytes y, al pasarlo a string ocupa 5. En la representacion interna los bytes estan transformados en ASCII.
+    
+a)¿Qué función sirve para implementar el read específico del dispositivo gestionado por cada device driver?
+    
+    para myDriver1 = read_driver_1 y para myDriver2 = read_driver_2
+
+b)¿Qué son el major y el minor? ¿Para qué sirven? ¿Qué major y minor utilizan los dos device drivers?
+
+    Elmajor y el minor son identificadores. El major es un numero que identifica el diver asociado al dispositivo. El minor es un numero que solo es usado por el driver especificado por el major y ayuda a los drivers a diferenciarse entre ellos.
+
