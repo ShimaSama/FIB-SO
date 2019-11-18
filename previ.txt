@@ -1,0 +1,21 @@
+-Anota en el fichero “previo.txt” los comandos que has ejecutado.
+
+    mknod pipe p
+    1er terminal = cat > pipe
+    2ndo terminal = cat < pipe
+    
+    
+-¿Es posible comunicar los dos comandos ‘cat’ desde dos terminales diferentes a través de una pipe sin nombre? ¿y desde el mismo terminal? 
+
+    Desde dos terminales diferentes  no se puede, ya que solo el mismo proceso o sus hijos pueden acceder al pipe. En cambio, desde el mismo terminal si que se puede ya que es el mismo proceso.
+
+-Escribe en el fichero “previo.txt” el fragmento de código que deberíamos añadir a un programa cualquiera para redireccionar su entrada estándar.
+
+    dup2(4,0);
+    close(4);
+    
+-Explica en el fichero “previo.txt” paso a paso lo que hacen estas dos funciones.
+
+    CreateSocket: Primero crea una dirección para el socket. A continuación crea un socket( de la familia PFUNIX para comunicarse entre procesos de la misma maquina) con el ID pasado como parametro con la llamda socket, después  enlaza el socket con una dirección con la llamada bind, seguidamente hace una espera hasta que haya una conección con llamada listen y al acabar devuelve socket_fd(-1 si hay error o el descriptor que referencia el socket). Todos estos pasos tienen control de error(si hay error se cierra el socket).
+    
+    serverConnection: La función devuelve -1 si se a producido un error, sino devuelve 	el valor del descriptor de la socket acceptada. Accept llenará el valor de &sockAddr con el valor de la dirección del socket accpetado y &addrSize será su tamaño.
