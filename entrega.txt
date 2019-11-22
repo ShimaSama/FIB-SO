@@ -1,43 +1,12 @@
-Alarm 1:
+Sesión 8: Gestión de Entrada/Salida
+PREGUNTA 64. ¿Qué contiene el fichero al final de la ejecución? ¿Cómo se explica ese contenido?
+-INICIO
+ FIN
+ Inicio se escribe en el canal de salida de la pipe, y al duplicar el canal el hijo redireciona el mensaje como entrada del cat, entonces el cat estribe el mensaje inicio. Una vez el hijo muere,el padre sale del waitpid y escribe fin. 
 
-1. A los 5 segundos no hace nada, pero cuando pasan 10 se imprime en pantalla "Alarm Clock"
-2. No, el programa deja de ejecutarse (no espera a alarm) y aparece el mensaje "killed"
-3. El proceso padre / con waitpid(...);
-4. No / Si hay algun error con el alarm sí.
+PREGUNTA 65. ¿Acaba el programa padre? ¿y el hijo? ¿Por qué?.
 
-Alarm 2:
+-El padre no acaba porque el hijo sigue esperando información por el canal de entrada ya que este no esta cerrado. Por consiguiente, ninguno de los dos acaba. 
 
-1. Cada 10 segundos imprime el pid (que no cambia) y los segundos de la alarma hasta llegar a los 100, pero al usar el comando -alrm salta al siguiente mensaje sin esperar los 10 segundos / No ha funcionado, ya que al usar el comando salta al siguente mensaje sin que hayan pasado realmente 10s
-2. No SIGKILL y SIGSTOP no pueden tratarse
-3. En el while hemos modificado la linea alarm(10):
-
-	...
-	int a = alarm(10);
-	if (a != 0) write(1,"False\n",6);
-	...
-
-Alarm 3:
-
-1. Los dos / Los pid son diferentes y en el codigo podemos ver el fork() / Hace falta usar el getpid(), pero ya está implementado en el código
-
-Alarm 4:
-
-1. 10 / El padre las 10 primeras y el hijo las 10 últimas / Entra en estado Zombie / Accediendo al fichero status en /proc/PID_PADRE
-
-Waitpid:
-
-2. Modificación: 
-
-	...
-	sprintf(buff,"Termina el proceso %d, causa: %d\n",pid,res);
-	...
-
-3. Modificación:
-
-	...
-	alarm(2);
-	pid=waitpid(-1,&res,0);
-	int t = alarm(0);
-	sprintf(buff, "Interval: %d\n",t);
-	write(1, buff, strlen(buff));
-	...
+PREGUNTA 66. Si quisiéramos que el lector también pudiera enviar un mensaje al escritor ¿podríamos utilizar la misma pipe con nombre o deberíamos crear otra? Razona la respuesta.
+-
