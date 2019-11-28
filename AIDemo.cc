@@ -128,70 +128,60 @@ struct PLAYER_NAME : public Player {
 
 
  }
-
-  void move_wizards() {
-  int wai[]={1,1,1,0,0,-1,-1,-1};
-  int ix[]={-1,0,1,-1,1,-1,0,1};
-  vector<int> W = wizards(me());
-    for (int id : W) {
-	
-        Pos p = unit(id).pos;
-	
-	int x= p.i; //pos del mago
-	int y=p.j;
-
-	
-	//mirar malos
-	 VI D = dwarves(me());
-	for(int i=0; i<8; i++){ //para ver lo de los lados
+ 
+ void lados_mago(int x, int y, int& yes){
+ 	
+ 	yes=false;
+ 	
+ 	int wai[]={1,1,1,0,0,-1,-1,-1};
+ 	int ix[]={-1,0,1,-1,1,-1,0,1};
+ 	
+ 	
+ 	for(int i=0; i<8; i++){ //para ver lo de los lados
 
 		if(pos_ok((x+ix[i]),(y+wai[i]))){
+			
 			Cell c= cell(x+ix[i],y+wai[i]);
 
-			if(c.id!=-1 and c.owner!=me()){ //todos los malos
-
-				if(ix[i]==1 and pos_ok(x-1,y)){
-					command(id, Left);
-					return;
-				}
-				else if(ix[i]==-1 and pos_ok(x+1,y)){
-				       	command(id, Right);
-					return;
-				}
-				else if(wai[i]==1 and pos_ok(x,y-1)){
-				       	command(id, Bottom);
-					return;
-				}
-				else if(wai[i]==-1 and pos_ok(x,y+1)){
-					command(id, Top);
-					return;
-
-				}
+			if(c.id!=-1 and c.owner!=me()){ //todos los malos, si hay malos al lado
+				
+				yes=true;
+				if(ix[i]==1 and pos_ok(x-1,y))	command(id, Left);
+				else if(ix[i]==-1 and pos_ok(x+1,y)) command(id, Right);
+				else if(wai[i]==1 and pos_ok(x,y-1)) command(id, Bottom);
+				else if(wai[i]==-1 and pos_ok(x,y+1)) command(id, Top);
+				return;			
 			}
-			if(c.id!=-1 and c.owner==me()){ //si hay una tropa mia al lado
+			else if(c.id!=-1 and c.owner==me() ){ //si hay una tropa mia al lado
 
 				Unit idk= unit(c.id); //que tropa mia hay
-				if(idk.type==0) return; //si hay dwarf al lado no te muevas	
-
+				if(idk.type==0){
+					yes=true;
+					return; //si hay dwarf al lado no te muevas	
+				}
 			}
 		}
 	}
-	
-	 for(int i: D){
+ 	
+ 	
+ }
+ 
+ void seguir(int x, int y){
+ 	
+ 	VI D = dwarves(me());
+ 		 
+ 	 for(int i: D){
 
 		Pos p2=unit(i).pos;
 		int x2=p2.i;
-		int y2=p2.j;
+		int y2=p2.j; //posicion del dwarf
 		if(x2<x+8 and x2>x-8 and y2<y+8 and y2>y-8){
 			
 				
 			vector<vector<pair<int,int> > > rec(64, vector<pair<int,int> > (64,make_pair(-1,-1)));
 			bool yes=false;
-			persecucion(x,y,x2,y2,yes,rec);
-				command(id, Dir(2*random(0, 3)));
-				return;
-			
-	
+			persecucion(x,y,x2,y2,yes,rec); //mirar si puede llegar al dwarf
+				
 			if(yes){ //se mueve hacia el dwarf en teoria
 				
 				stack< pair<int,int> > res;
@@ -205,20 +195,34 @@ struct PLAYER_NAME : public Player {
 				}
 				pair<int,int> aux=res.top();
 				
-				if(aux.first==(x-1))command(id, Left);
-				else if(aux.first==(x+1)){
-				       	command(id, Right);
-				else if(aux.second==(y-1))    command (id, Bottom);
-
-				else   	command (id, Top);	
-
+				if(aux.first==(x-1)) command(id, Left);
+				else if(aux.first==(x+1)) command(id, Right);
+				else if(aux.second==(y-1)) command (id, Bottom);
+				else  command (id, Top);	
+				return;
 			}
 
 		}		
 
 	 }
+	 command(id, Dir(2*random(0, 3))); //si no hay ningun dwarf cerca
+ }
+
+void move_wizards() {
+
+  vector<int> W = wizards(me());
+  for (int id : W) {
+	
+        Pos p = unit(id).pos;
+	
+		int x= p.i; //pos del mago
+		int y=p.j;
+
+		lados_mago(x,y,yes);
+		if(not yes)seguir(x,y);
+	
    }
-  }
+ }
 
 
 
