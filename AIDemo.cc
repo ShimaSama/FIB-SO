@@ -177,7 +177,6 @@ struct PLAYER_NAME : public Player {
 		}
 	}
 	
-
 	 for(int i: D){
 
 		Pos p2=unit(i).pos;
@@ -189,17 +188,14 @@ struct PLAYER_NAME : public Player {
 			vector<vector<pair<int,int> > > rec(64, vector<pair<int,int> > (64,make_pair(-1,-1)));
 			bool yes=false;
 			persecucion(x,y,x2,y2,yes,rec);
-			if(not yes) {
 				command(id, Dir(2*random(0, 3)));
 				return;
-				cout << "hi;
-			}
+			
 	
-			else{ //se mueve hacia el dwarf en teoria
-
+			if(yes){ //se mueve hacia el dwarf en teoria
+				
 				stack< pair<int,int> > res;
 				while(rec[x2][y2]!=make_pair(-1,-1)){
-					cout << "hi;
 					res.push(make_pair(x2,y2));
 					pair<int,int> aux= rec[x2][y2];
 					x2=aux.first;
@@ -210,10 +206,11 @@ struct PLAYER_NAME : public Player {
 				pair<int,int> aux=res.top();
 				
 				if(aux.first==(x-1))command(id, Left);
-				else if(aux.first==(x+1)) command(id, Right);
-				else if(aux.second==(y-1)) command (id, Bottom);
-				else command (id, Top);	
+				else if(aux.first==(x+1)){
+				       	command(id, Right);
+				else if(aux.second==(y-1))    command (id, Bottom);
 
+				else   	command (id, Top);	
 
 			}
 
