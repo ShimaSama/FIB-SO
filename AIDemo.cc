@@ -31,54 +31,131 @@ struct PLAYER_NAME : public Player {
 
   map<int, int> kind; // For wizards: 0 -> random, 1 -> cyclic.
 
- 
 
- void lados_dwarf(int x, int y, int id, bool& yes){
+ bool is_rock(Pos p){
+
+	Cell c =cell(p);
+	if((c.type==Outside or c.type==Cave)and c.id==-1) return true;
+	else return false;
+
+
+ } 
+
+ void lados_dwarf(Pos& p, int& id, bool& yes, int extra,bool landlord){
 	
 	yes=false;
- 	
- 	int wai[]={1,1,1,0,0,-1,-1,-1};
- 	int ix[]={-1,0,1,-1,1,-1,0,1};
- 	
+
+	int smash=0; 
+
+	bool attack=false;
+
+	bool run=false;
+
+	int scared=0;
+
+
+	int land=0;
  	
  	for(int i=0; i<8; i++){ //para ver lo de los lados
 
-		if(pos_ok((x+ix[i]),(y+wai[i]))){ //si esa posicion es buena
+		if(pos_ok((p+Dir(i)).i,(p+Dir(i)).j)){ //si esa posicion es buena
 			
-			Cell c= cell(x+ix[i],y+wai[i]);
+			Cell c= cell((p+Dir(i)).i,(p+Dir(i)).j);
 
-			bool attack=false;
 			
-			if(c.id!=-1 and c.owner!=me()){ //malo
-				
-				Unit u = unit(c.id);
-				Unit tina= unit(id);
-				if(u.health < tina.health) attack=true; //mirar si no es troll..
-
-			}
-
-			if(c.treasure or attack ){
-				
+			if(c.treasure==true){
+			
 				yes=true;
-				if(i==0) command(id,TL);
-				else if(i==1) command(id,Top);
-				else if(i==2) command(id, RT);
-				else if(i==3) command(id, Left);
-				else if(i==4) command(id, Right);
-				else if(i==5) command(id,LB);
-				else if(i==6) command(id,Bottom);
-				else if(i==7) command(id,LB);
+				command(id,Dir(i));
 				return;
 			}
 
-	//		if(c.id!=-1 and c.owner!=me()){ //todos los malos, si hay malos al lado
-			
-				//ahora no lo hago	
-	//		}
+			else if(c.id!=-1 and c.owner!=me()){ //malo
+				
+				Unit u= unit(c.id);
+				Unit tina= unit(id);
+				if(u.health<=tina.health){
+					attack=true;
+					smash=i;
+				}
+				else if(u.type==Troll or u.type==Balrog){
+
+					run=true;
+					scared=i;			
+
+				}
+			}
+			else if(c.id==-1 and c.owner!=me() and landlord){
+
+				land=i;
+			}
+
 		}
 	}
- 	
+	if(attack==true){
+		
+		yes=true;
+		command(id,Dir(smash));
+		return;
 
+	}
+	if(run==true){
+		yes=true;
+		if(Dir(scared)==Bottom or Dir(scared)==BR or Dir(scared)==LB){
+
+			if(pos_ok(p+Dir(4)) and is_rock(p+Dir(4))) command(id,Top);
+			return;
+
+		}
+		if(Dir(scared)==Top or Dir(scared)==TL or Dir(scared)==RT){
+
+			if(pos_ok(p+Dir(0)) and is_rock(p+Dir(0))) command(id,Bottom);
+			return;
+
+		}
+		if(Dir(scared)==Right or Dir(scared)==BR or Dir(scared)==RT){
+
+			if(pos_ok(p+Dir(6)) and is_rock(p+Dir(6))) command(id,Left);
+			return;
+
+		}
+		if(Dir(scared)==Left or Dir(scared)==TL or Dir(scared)==LB){
+
+			if(pos_ok(p+Dir(2)) and is_rock(p+Dir(2))) command(id,Right);
+			return;
+
+		}
+		if(Dir(scared)!=Right and Dir(scared)!=Bottom){
+
+			if(pos_ok(p+Dir(1)) and is_rock(p+Dir(1))) command(id,BR);
+			return;
+
+		}
+		if(Dir(scared)!=Top and Dir(scared)!=Right){
+
+			if(pos_ok(p+Dir(3)) and is_rock(p+Dir(3))) command(id,RT);
+			return;
+
+		}
+
+		if(Dir(scared)!=Top and Dir(scared)!=Left){
+
+			if(pos_ok(p+Dir(5)) and is_rock(p+Dir(5))) command(id,TL);
+			return;
+
+		}
+		if(Dir(scared)!=Left and Dir(scared)!=Bottom){
+
+			if(pos_ok(p+Dir(7)) and is_rock(p+Dir(7))) command(id,LB);
+			return;
+
+		}
+
+	}
+	if(landlord){ 
+		yes=true;
+		command(id,Dir(land));
+	}
  }
 
  void coinzz(vector<vector<int > >& coinz){
@@ -93,16 +170,21 @@ struct PLAYER_NAME : public Player {
 	bool found=false;
 	int ti;
 	int na;
-	for (ti=0; ti<60 and not found; ti++){
-		for(int na=0; na<60 and not found; na++){
+	for (int i=0; i<60 and not found; i++){
+		for(int j=0; j<60 and not found; j++){
 
-			if(pos_ok(ti,na)){Cell c= cell(ti,na);
-				if (c.treasure==true)  found = true;
+			if(pos_ok(i,j)){
+				Cell c= cell(i,j);
+				if (c.treasure==true){
+				      	found = true;
+					ti=i;
+					na=j;
+				}
 			
 			}
 		}
 	}
-
+	
 	vector<vector<bool> > visited(60, vector<bool>(60,false));
 
 	priority_queue< p, vector<p>, greater<p> > q;
@@ -134,7 +216,8 @@ struct PLAYER_NAME : public Player {
 					int cost;
 					Cell c =cell (xaux, yaux);
 					//CellType = c.type;
-					if(c.type==Rock) cost=coinz[xnow][ynow]+c.turns;
+					if(c.treasure) cost=0;
+					else if(c.type==Rock) cost=coinz[xnow][ynow]+c.turns;
 					else if(c.type==Abyss) cost=inf;
 					else if(c.type==Granite) cost=inf;
 					else cost=coinz[xnow][ynow]+1;
@@ -158,40 +241,29 @@ struct PLAYER_NAME : public Player {
 
  }
 
-void forthecoinz(vector<vector< int > >& coinz,int x, int y, int id){
+void forthecoinz(vector<vector< int > >& coinz, Pos& p, int& id, bool& landlord){
 
-	int ix[]={0,1,1,1,0,-1,-1,-1};
-	int wai[]={-1,-1,0,1,1,1,0,-1};
 	
 	int const inf = numeric_limits<int>::max();
-
+	
 	int min=inf;
-	int i;
+	int max=0;
 	//int ygo=0;
-	for ( i=0; i<8; i++){
+	for ( int i=0; i<8; i++){
 
 			
-		if(pos_ok(x+ix[i], y+wai[i])){
-			if(coinz[x+ix[i]][y+wai[i]] < min){
+		if(pos_ok(p+Dir(i))){
+			if(coinz[(p+Dir(i)).i][(p+Dir(i)).j] < min){
 
-				min= coinz[x+ix[i]][y+wai[i]];
+				min= coinz[(p+Dir(i)).i][(p+Dir(i)).j];
+				max = i;
 			
 			
 			}
 		}
-
-		
 	}
-	if(i==0) command(id, Bottom);
-	else if(i==1) command(id, BR);
-	else if(i==2) command(id, Right);
-	else if(i==3) command(id, RT);
-	else if(i==4) command(id, Top);
-	else if(i==5) command(id, TL);
-	else if(i==6) command(id, Left);
-	else if(i==7) command(id, LB);
-
-
+	if(max> (200-round())) landlord=true;
+	command(id, Dir(max));
 }
 
 
@@ -204,64 +276,59 @@ void forthecoinz(vector<vector< int > >& coinz,int x, int y, int id){
 	
 	vector<vector<int> > coinz(60,vector<int>(60,inf));
 	coinzz(coinz);
-
-    
+	bool landlord=false;
   	vector<int> D = dwarves(me());
+	int extra=0;
   	for (int id : D) {
+		
+		extra++;
+	        Pos p = unit(id).pos;
 	
-        	Pos p = unit(id).pos;
-	
-		int x= p.i; //pos del dwarf
-		int y=p.j;
 		bool yes=false;
-		lados_dwarf(x,y,id,yes);
+		lados_dwarf(p,id,yes,extra,landlord);
 
-		if(not yes) {
+		if(not yes and not landlord) {
+			
+			forthecoinz(coinz,p,id,landlord);
 		
-			forthecoinz(coinz,x,y,id);
-		
-		
+		}
+		else if(not yes and landlord){
+
+			command(id,Dir(random(0,7)));
 		}
 		
 	}
   }
 
- void persecucion(int x, int y, int x2, int y2,bool& yes, vector<vector<pair<int,int> > >& rec ){
+ void persecucion(Pos p, int x2, int y2,bool& yes, vector<vector<pair<int,int> > >& rec ){
 	
-	queue<pair<pair<int,int>,int> > q; 
-	q.push(make_pair(make_pair(x,y),0));
+	queue<pair<Pos,int> > q; 
+	q.push(make_pair(p,0));
 	vector<vector<bool> > visited(64, vector<bool>(64,false)); 
 	while(!q.empty() ){
 
-		int ix[]={1,-1,0,0};
-		int wai[]={0,0,1,-1};
-
-		int xa=q.front().first.first; 
-		int ya=q.front().first.second;
+		Pos pa=q.front().first;
 		int dista=q.front().second;
 
 		q.pop();
-		visited[xa][ya]=true;
+		visited[pa.i][pa.j]=true;
 
-		for(int i=0; i<4; i++){
+		for(int i=0; i<8; i=i+2){
 
+			Pos p3=pa+Dir(i);
+			if(pos_ok(p3)){
 
-			int x3=xa+ix[i];
-			int y3=ya+wai[i];
-
-			if(pos_ok(x3,y3)){
-
-				if(x3==x2 and y3==y2){
-					rec[x3][y3]=make_pair(xa,ya);
+				if(p3.i==x2 and p3.j==y2){
+					rec[p3.i][p3.j]=make_pair(pa.i,pa.j);
 			       		yes=true;
 					return;
 				}	//done
-				else if(visited[x3][y3]==false){
+				else if(visited[p3.i][p3.j]==false){
 
-					visited[x3][y3]=true;
+					visited[p3.i][p3.j]=true;
 					int dist=dista+1;
-					rec[x3][y3]=make_pair(xa,ya);
-					q.push(make_pair(make_pair(x3,y3),dist));
+					rec[p3.i][p3.j]=make_pair(pa.i,pa.j);
+					q.push(make_pair(p3,dist));
 
 				}
 
@@ -275,47 +342,45 @@ void forthecoinz(vector<vector< int > >& coinz,int x, int y, int id){
 
  }
  
- void lados_mago(int x, int y, bool& yes, int id){
+ void lados_mago(Pos p, bool& yes, int id){
 
  	
  	yes=false;
  	
- 	int wai[]={1,1,1,0,0,-1,-1,-1};
- 	int ix[]={-1,0,1,-1,1,-1,0,1};
  	
  	//mirar tesoros
  	for(int i=0; i<8; i++){ //para ver lo de los lados
 
-		if(pos_ok((x+ix[i]),(y+wai[i]))){ //si esa posicion es buena
+		if(pos_ok(p+Dir(i))){ //si esa posicion es buena
 			
-			Cell c= cell(x+ix[i],y+wai[i]);
+			Cell c= cell(p+Dir(i));
 
 			if(c.id!=-1 and c.owner!=me()){ //todos los malos, si hay malos al lado
 				
 				yes=true;
-				if(ix[i]==1 ){
-					if(pos_ok(x-1,y))command(id, Left);
-					else if(wai[i]==-1 and pos_ok(x,y+1)) command(id, Top);
-					else if(pos_ok(x,y-1)) command(id, Bottom);
+				if(Dir(i)==Right or Dir(i)==RT or Dir(i)==BR){
+					if(pos_ok(p+Dir(6)))command(id, Left); 
+					else if(Dir(i)==BR and pos_ok(p+Dir(4))) command(id, Top);
+					else if(pos_ok(p+Dir(0))) command(id, Bottom);
+					else command(id, Dir(2*random(0, 3))); 
+				} 
+				else if(Dir(i)==Left or Dir(i)==TL or Dir(i)==LB){
+			       		if(pos_ok(p+Dir(2))) command(id,Right);
+					else if(Dir(i)==LB and pos_ok(p+Dir(4))) command(id, Top);
+					else if(pos_ok(p+Dir(0))) command(id, Bottom);
 					else command(id, Dir(2*random(0, 3))); 
 				}
-				else if(ix[i]==-1){
-			       		if(pos_ok(x+1,y)) command(id,Right);
-					else if(wai[i]==-1 and pos_ok(x,y+1)) command(id, Top);
-					else if(pos_ok(x,y-1)) command(id, Bottom);
-					else command(id, Dir(2*random(0, 3))); 
-				}
-				else if(wai[i]==1){
-			       		if(pos_ok(x,y-1))command(id, Bottom);
-					else if(ix[i]==-1 and pos_ok(x+1,y)) command(id,Right);
-					else if(pos_ok(x-1,y)) command(id,Left);
-					else command(id, Dir(2*random(0, 3))); 
-				}
-				else if(wai[i]==-1){
-				 	if(pos_ok(x,y+1))  command(id, Top);
-					else if(ix[i]==-1 and pos_ok(x+1,y)) command(id,Right);
-					else if(pos_ok(x-1,y)) command(id,Left);
-					else command(id, Dir(2*random(0, 3))); 
+				else if(Dir(i)==RT or Dir(i)==Top or Dir(i)==TL){
+			       		if(pos_ok(p+Dir(0)))command(id, Bottom);
+					else if(Dir(i)==TL and pos_ok(p+Dir(2))) command(id,Right);
+					else if(pos_ok(p+Dir(6))) command(id,Left);
+					else command(id, Dir(2*random(0, 3)));  
+					}
+				else if(Dir(i)==Bottom or Dir(i)==BR or Dir(i)==LB){
+				 	if(pos_ok(p+Dir(4)))  command(id, Top);
+					else if(Dir(i)==LB and pos_ok(p+Dir(2))) command(id,Right);
+					else if(pos_ok(p+Dir(6))) command(id,Left);
+					else command(id, Dir(2*random(0, 3)));  
 				}
 				//puedes poner ranom aqui
 				return;	
@@ -334,9 +399,11 @@ void forthecoinz(vector<vector< int > >& coinz,int x, int y, int id){
  	
  }
  
- void seguir(int x, int y, int id ){
+ void seguir(Pos p, int id ){
  	
  	VI D = dwarves(me());
+	int x=p.i;
+	int y=p.j;
  		 
  	 for(int i: D){
 
@@ -348,7 +415,7 @@ void forthecoinz(vector<vector< int > >& coinz,int x, int y, int id){
 				
 			vector<vector<pair<int,int> > > rec(64, vector<pair<int,int> > (64,make_pair(-1,-1)));
 			bool yes=false;
-			persecucion(x,y,x2,y2,yes,rec); //mirar si puede llegar al dwarf
+			persecucion(p,x2,y2,yes,rec); //mirar si puede llegar al dwarf
 				
 			if(yes){ //se mueve hacia el dwarf en teoria
 				
@@ -387,8 +454,8 @@ void move_wizards() {
 		int y=p.j;
 		
 		bool yes;
-		lados_mago(x,y,yes,id);
-		if(not yes)seguir(x,y,id);
+		lados_mago(p,yes,id);
+		if(not yes)seguir(p,id);
 	
    }
  }
@@ -412,4 +479,3 @@ void move_wizards() {
  * Do not modify the following line.
  */
 RegisterPlayer(PLAYER_NAME);
-
