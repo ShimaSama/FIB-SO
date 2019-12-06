@@ -40,25 +40,39 @@ struct PLAYER_NAME : public Player {
 
 
  } 
+ 
+ int ownernew(Cell& c){
+     
+     //si soy yo devuelve 1
+     //si es outside devuelve 0
+    // si no es de nadie devuelve -1
+      
+     if(c.type==Abyss or c.type==Granite or c.type==Outside) return 0;
+    if(c.owner==me()) return 1;
+    else return -1;
+         
 
- void lados_dwarf(Pos& p, int& id, bool& yes, int extra,bool landlord){
+ }
+
+
+ void lados_dwarf(Pos& p, int& id, bool& yes ){
 	
-	yes=false;
 
 	int smash=0; 
 
 	bool attack=false;
+    bool attackif=false;
 
 	bool run=false;
 
 	int scared=0;
+    bool camaradas=true;
 
-
-	int land=0;
+    
  	
  	for(int i=0; i<8; i++){ //para ver lo de los lados
 
-		if(pos_ok((p+Dir(i)).i,(p+Dir(i)).j)){ //si esa posicion es buena
+		if(pos_ok(p+Dir(i))){ //si esa posicion es buena
 			
 			Cell c= cell((p+Dir(i)).i,(p+Dir(i)).j);
 
@@ -69,36 +83,52 @@ struct PLAYER_NAME : public Player {
 				command(id,Dir(i));
 				return;
 			}
+			
 
-			else if(c.id!=-1 and c.owner!=me()){ //malo
+			else if(c.id!=-1){ //alguien
 				
 				Unit u= unit(c.id);
 				Unit tina= unit(id);
-				if(u.health<=tina.health){
+				if(u.player!=me() and u.health<=tina.health){
 					attack=true;
 					smash=i;
 				}
-				else if(u.type==Troll or u.type==Balrog){
+				
+				else if(u.type==Troll){
 
 					run=true;
 					scared=i;			
 
 				}
-			}
-			else if(c.id==-1 and c.owner!=me() and landlord){
+				else if(u.player!=me() and u.health>tina.health) attackif=true;
+                
+				else if(u.player==me()) camaradas=true;
+            }
+            
 
-				land=i;
-			}
-
+				
+            
 		}
 	}
-	if(attack==true){
+	if(attack==true and not run){
 		
-		yes=true;
-		command(id,Dir(smash));
-		return;
+
+        yes=true;
+        command(id,Dir(smash));
+        return;
+        
 
 	}
+	if(attackif==true and camaradas and not run){
+		
+
+        yes=true;
+        command(id,Dir(smash));
+        return;
+        
+
+	}
+	
 	if(run==true){
 		yes=true;
 		if(Dir(scared)==Bottom or Dir(scared)==BR or Dir(scared)==LB){
@@ -152,10 +182,7 @@ struct PLAYER_NAME : public Player {
 		}
 
 	}
-	if(landlord){ 
-		yes=true;
-		command(id,Dir(land));
-	}
+
  }
 
  void coinzz(vector<vector<int > >& coinz){
@@ -230,123 +257,324 @@ struct PLAYER_NAME : public Player {
 
 
 					}
-
 				}
 			}
-
 		}
-
-
-}
+    }
+    
+    int danger= balrog_id ();
+    Unit ew = unit(danger);
+    Pos mortal= ew.pos;
+    int mortalx= mortal.i;
+    int mortaly=mortal.j;
+    for(int i=0; i<8; i++) coinz[mortalx+ix[i]][mortaly+wai[i]]=inf;
+    int ixx[]={ -2,2,-2,2,2,-2,0,0,-1,+1,-1,+1,2,2,-2,-2};
+	int waii[]={-2,2,2,-2,0,0,2,-2,2,2,-2,-2,1,-1,1,-1};	
+    for(int i=0; i<16; i++) coinz[mortalx+ixx[i]][mortaly+waii[i]]=inf;
 
  }
+ 
+void slayer(vector<vector<int > >& killingspree){
 
-void forthecoinz(vector<vector< int > >& coinz, Pos& p, int& id, bool& landlord){
+	typedef pair<int, pair <int,int> > p;
+	
+	int ix[]={ -1, 0, 1, -1,1,-1,0,1};
+	int wai[]={1,1,1,0,0,-1,-1,-1};	
+	int const inf = numeric_limits<int>::max();
+
+	//buscar un dwarf
+	bool found=false;
+	int ti;
+	int na;
+	for (int i=0; i<60 and not found; i++){
+		for(int j=0; j<60 and not found; j++){
+
+                Cell c= cell(i,j);
+                if(c.id!=-1){ //alguien
+                        
+                        Unit malechor= unit(c.id);
+                        if(malechor.type!=Troll and malechor.type!=Balrog and malechor.player!=me()){
+                            found = true;
+                            ti=i;
+                            na=j;
+                        }
+				}
+		}
+	}
+	
+	vector<vector<bool> > visited(60, vector<bool>(60,false));
+
+	priority_queue< p, vector<p>, greater<p> > q;
+
+	q.push(make_pair(0,make_pair(ti,na))); //primer tesoro
+
+	killingspree[ti][na]=0; //tesoro igual 0
+	Unit malo;
+    bool yo;
+   
+
+	while(not q.empty()){
+
+		p now = q.top();
+		q.pop();
+		int xnow=now.second.first;
+		int ynow=now.second.second;
+
+		if(!visited[xnow][ynow]){
+
+
+			visited[xnow][ynow] =true;
+
+			for(int i=0; i< 8; i++){
+
+				//adj;
+				if(pos_ok(xnow+ix[i], ynow+wai[i])){
+					//if pos okey
+
+					int xaux=xnow+ix[i];
+					int yaux=ynow+wai[i];
+					int cost;
+					Cell c =cell (xaux, yaux);
+                    yo=false;
+                  //  otros=false;
+                   // toomuch=false;
+                   if(c.id!=-1 ){ //alguien
+                       malo= unit(c.id);
+                       if(malo.type!=Troll and malo.type!=Balrog and malo.player!=me()) { //malo
+                           yo=true;
+                       }
+                   }
+					if(yo==true) cost=0; //es un malvado q no es un troll o un balrog
+					else if(c.type==Rock) cost=killingspree[xnow][ynow]+c.turns;
+					else if(c.type==Abyss) cost=inf;
+					else if(c.type==Granite) cost=inf;
+					else cost=killingspree[xnow][ynow]+1;
+
+					if(killingspree[xaux][yaux] > cost){
+
+						killingspree[xaux][yaux] = cost;
+
+						q.push(make_pair(cost,make_pair(xaux,yaux) ));
+
+
+					}
+				}
+			}
+		}
+    }
+    
+    int danger= balrog_id ();
+    Unit ew = unit(danger);
+    Pos mortal= ew.pos;
+    int mortalx= mortal.i;
+    int mortaly=mortal.j;
+    for(int i=0; i<8; i++) killingspree[mortalx+ix[i]][mortaly+wai[i]]=inf;
+     int ixx[]={ -2,2,-2,2,2,-2,0,0,-1,+1,-1,+1,2,2,-2,-2};
+	int waii[]={-2,2,2,-2,0,0,2,-2,2,2,-2,-2,1,-1,1,-1};	
+    for(int i=0; i<16; i++) killingspree[mortalx+ixx[i]][mortaly+waii[i]]=inf;
+    
+
+ }
+ 
+ 
+ 
+void forthecoinz(vector<vector< int > >& coinz, Pos& p, int& id){
 
 	
 	int const inf = numeric_limits<int>::max();
 	
 	int min=inf;
 	int max=0;
+    int realmax=inf;
+    int minreal=inf;
+    int posi;
+    int nohaynada;
+    bool nohay=false;
+    int roquita;
+    bool roka=false;
+    bool landlord=false;
+   
+    
 	//int ygo=0;
 	for ( int i=0; i<8; i++){
 
 			
-		if(pos_ok(p+Dir(i))){
-			if(coinz[(p+Dir(i)).i][(p+Dir(i)).j] < min){
-
-				min= coinz[(p+Dir(i)).i][(p+Dir(i)).j];
+		if(pos_ok(p+Dir(i)) ){
+            posi=coinz[(p+Dir(i)).i][(p+Dir(i)).j];
+            Cell tina= cell(((p+Dir(i)).i),((p+Dir(i)).j));
+			if(posi < min ){
+                //Cell tina= cell(((p+Dir(i)).i),((p+Dir(i)).j));
+				min= posi;
 				max = i;
-			
-			
+                if((ownernew(tina)==-1) and  posi < minreal) {
+                  
+                    minreal=posi;
+                    realmax=i;
+                    
+                }
 			}
+			if((ownernew(tina)==-1)) {
+                
+                if(not nohay and tina.type==Cave){
+                    nohay=true;
+                    nohaynada=i;
+                }
+                if(not roka and tina.type==Rock){
+                    
+                    roka=true;
+                    roquita=i;
+                    
+                }
+            }
 		}
 	}
-	if(max> (200-round())) landlord=true;
-	command(id, Dir(max));
+	if(min> (200-round())) landlord=true;
+    if(minreal!=inf and minreal==min) max=realmax;
+    Cell tinapower = cell(p+Dir(max));
+	if(tinapower.id==-1 and not landlord){ //va hacia el sitio minimo si no hay nadie
+        command(id, Dir(max));
+        return;
+    }
+    
+    if(nohay or landlord) { //va hacia sitio no mio
+        command(id, Dir(nohaynada));
+        return;
+    }
+    if(roka or landlord){ //destruye roka
+        
+        command(id, Dir(roquita));
+        return;
+    }
+    
+    
 }
 
 
+void koro(vector<vector< int > >& killingspree, Pos& p, int& id){
 
-
-
-  void move_dwarves() {
-
+	
 	int const inf = numeric_limits<int>::max();
 	
+	int min=inf;
+	int max=0;
+    int posi;
+    int nohaynada;
+    bool nohay=false;
+    int roquita;
+    bool roka=false;
+    bool landlord=false;
+   
+    
+	//int ygo=0;
+	for ( int i=0; i<8; i++){
+
+			
+		if(pos_ok(p+Dir(i)) ){
+            posi=killingspree[(p+Dir(i)).i][(p+Dir(i)).j];
+            Cell tina= cell(((p+Dir(i)).i),((p+Dir(i)).j));
+			if(posi < min){
+                //Cell tina= cell(((p+Dir(i)).i),((p+Dir(i)).j));
+				min= posi;
+				max = i;
+                
+			}
+			if((ownernew(tina)==-1)) {
+                
+                if(not nohay and tina.type==Cave){
+                    nohay=true;
+                    nohaynada=i;
+                }
+                if(not roka and tina.type==Rock){
+                    
+                    roka=true;
+                    roquita=i;
+                    
+                }
+            }
+		}
+	}
+	if(min> (200-round())) landlord=true;
+    Cell tinapower = cell(p+Dir(max));
+	if(tinapower.id==-1 and not landlord){ //va hacia el sitio minimo si no hay nadie
+        command(id, Dir(max));
+        return;
+    }
+    
+    if(nohay or landlord) { //va hacia sitio no mio
+        command(id, Dir(nohaynada));
+        return;
+    }
+    if(roka or landlord){ //destruye roka
+        
+        command(id, Dir(roquita));
+        return;
+    }
+    
+    
+}
+
+bool hay_mago(Pos& p){
+    
+    
+    for(int i=0; i<8; i++){
+        
+        if(pos_ok(p+Dir(i))){
+            
+            Cell c= cell(p+Dir(i));
+            if(c.id!=-1 ){
+                
+                Unit ismago = unit(c.id);
+                if(ismago.type==Wizard and ismago.player==me()) return true;
+                 
+            }
+        }
+    }
+    
+    return false;
+}
+    
+void move_dwarves() {
+
+	int const inf = numeric_limits<int>::max();
+    
 	vector<vector<int> > coinz(60,vector<int>(60,inf));
 	coinzz(coinz);
-	bool landlord=false;
+	vector<vector<int> > killingspree(60,vector<int>(60,inf));
+    slayer(killingspree);
   	vector<int> D = dwarves(me());
-	int extra=0;
+    
+
   	for (int id : D) {
 		
-		extra++;
-	        Pos p = unit(id).pos;
-	
-		bool yes=false;
-		lados_dwarf(p,id,yes,extra,landlord);
+        
+        Pos p = unit(id).pos;
+        
+       
+        
+            
+            bool yes=false;
+       
+            lados_dwarf(p,id,yes);
 
-		if(not yes and not landlord) {
+            if(not yes) {
+                
+                 if(hay_mago(p)){
+            
+                    koro(killingspree,p,id);
+            
+                }
 			
-			forthecoinz(coinz,p,id,landlord);
+                else forthecoinz(coinz,p,id);
 		
-		}
-		else if(not yes and landlord){
-
-			command(id,Dir(random(0,7)));
-		}
-		
-	}
+            }
+        
+    }
+    
   }
 
- void persecucion(Pos p, int x2, int y2,bool& yes, vector<vector<pair<int,int> > >& rec ){
-	
-	queue<pair<Pos,int> > q; 
-	q.push(make_pair(p,0));
-	vector<vector<bool> > visited(64, vector<bool>(64,false)); 
-	while(!q.empty() ){
-
-		Pos pa=q.front().first;
-		int dista=q.front().second;
-
-		q.pop();
-		visited[pa.i][pa.j]=true;
-
-		for(int i=0; i<8; i=i+2){
-
-			Pos p3=pa+Dir(i);
-			if(pos_ok(p3)){
-
-				if(p3.i==x2 and p3.j==y2){
-					rec[p3.i][p3.j]=make_pair(pa.i,pa.j);
-			       		yes=true;
-					return;
-				}	//done
-				else if(visited[p3.i][p3.j]==false){
-
-					visited[p3.i][p3.j]=true;
-					int dist=dista+1;
-					rec[p3.i][p3.j]=make_pair(pa.i,pa.j);
-					q.push(make_pair(p3,dist));
-
-				}
-
-			}
-		}
-	}
-	
-	yes=false;
-	
-
-
- }
  
  void lados_mago(Pos p, bool& yes, int id){
 
- 	
- 	yes=false;
- 	
  	
  	//mirar tesoros
  	for(int i=0; i<8; i++){ //para ver lo de los lados
@@ -355,108 +583,242 @@ void forthecoinz(vector<vector< int > >& coinz, Pos& p, int& id, bool& landlord)
 			
 			Cell c= cell(p+Dir(i));
 
-			if(c.id!=-1 and c.owner!=me()){ //todos los malos, si hay malos al lado
+			if(c.id!=-1){ //alguien
+                
+                Unit g=unit(c.id);
+                if( g.player!=me()){
+                    yes=true;
+                    vector<bool> vo(4,false); //mirar si es roka
+                    for(int i=0; i<8; i=i+2){
+                    
+                    
+                        if(pos_ok(p+Dir(i)) and is_rock(p+Dir(i))) vo[i/2]=true; //no hay nadie i es cave or outside
+                  
+                    }
 				
-				yes=true;
-				if(Dir(i)==Right or Dir(i)==RT or Dir(i)==BR){
-					if(pos_ok(p+Dir(6)))command(id, Left); 
-					else if(Dir(i)==BR and pos_ok(p+Dir(4))) command(id, Top);
-					else if(pos_ok(p+Dir(0))) command(id, Bottom);
-					else command(id, Dir(2*random(0, 3))); 
-				} 
-				else if(Dir(i)==Left or Dir(i)==TL or Dir(i)==LB){
-			       		if(pos_ok(p+Dir(2))) command(id,Right);
-					else if(Dir(i)==LB and pos_ok(p+Dir(4))) command(id, Top);
-					else if(pos_ok(p+Dir(0))) command(id, Bottom);
-					else command(id, Dir(2*random(0, 3))); 
-				}
-				else if(Dir(i)==RT or Dir(i)==Top or Dir(i)==TL){
-			       		if(pos_ok(p+Dir(0)))command(id, Bottom);
-					else if(Dir(i)==TL and pos_ok(p+Dir(2))) command(id,Right);
-					else if(pos_ok(p+Dir(6))) command(id,Left);
-					else command(id, Dir(2*random(0, 3)));  
+				
+                    if(Dir(i)==Right or Dir(i)==RT or Dir(i)==BR){
+                        if(pos_ok(p+Dir(6))and vo[3]==true)command(id, Left); 
+                        else if(Dir(i)==BR and pos_ok(p+Dir(4)) and vo[2]==true) command(id, Top);
+                        else if(pos_ok(p+Dir(0))and vo[0]==true) command(id, Bottom);
+					 
+                    } 
+                    else if(Dir(i)==Left or Dir(i)==TL or Dir(i)==LB){
+			       		if(pos_ok(p+Dir(2))and vo[1]==true) command(id,Right);
+                        else if(Dir(i)==LB and pos_ok(p+Dir(4))and vo[2]==true) command(id, Top);
+                        else if(pos_ok(p+Dir(0))and vo[0]==true) command(id, Bottom);
+					 
+                    }
+                    else if(Dir(i)==RT or Dir(i)==Top or Dir(i)==TL){
+			       		if(pos_ok(p+Dir(0))and vo[0]==true)command(id, Bottom);
+                        else if(Dir(i)==TL and pos_ok(p+Dir(2))and vo[1]==true) command(id,Right);
+                        else if(pos_ok(p+Dir(6))and vo[3]==true) command(id,Left);
+					 
 					}
-				else if(Dir(i)==Bottom or Dir(i)==BR or Dir(i)==LB){
-				 	if(pos_ok(p+Dir(4)))  command(id, Top);
-					else if(Dir(i)==LB and pos_ok(p+Dir(2))) command(id,Right);
-					else if(pos_ok(p+Dir(6))) command(id,Left);
-					else command(id, Dir(2*random(0, 3)));  
-				}
-				//puedes poner ranom aqui
-				return;	
-			}
-			else if(c.id!=-1 and c.owner==me() ){ //si hay una tropa mia al lado
+                    else if(Dir(i)==Bottom or Dir(i)==BR or Dir(i)==LB){
+                        if(pos_ok(p+Dir(4))and vo[2]==true)  command(id, Top);
+                        else if(Dir(i)==LB and pos_ok(p+Dir(2))and vo[1]==true) command(id,Right);
+                        else if(pos_ok(p+Dir(6))and vo[3]==true) command(id,Left);
+					 
+                    }
+                    //puedes poner ranom aqui
+                    return;	
+                }
+                else if(g.player==me()){ //si hay una tropa mia al lado
 
-				Unit idk= unit(c.id); //que tropa mia hay
-				if(idk.type==0){
-					yes=true;
-					return; //si hay dwarf al lado no te muevas	
+                    Unit idk= unit(c.id); //que tropa mia hay
+                    if(idk.type==Dwarf){
+                        command(id,None);
+                        yes=true;
+                        return; //si hay dwarf al lado no te muevas	
+                    }
+                }
+            }
+        }
+    }
+ }
+
+ 
+void power(vector<vector<int > >& bambam){
+    
+
+	typedef pair<int, pair <int,int> > p;
+	
+	int ix[]={-1,1,0,0};
+	int wai[]={0,0,-1,1};	
+    
+	int const inf = numeric_limits<int>::max();
+
+	//buscar un dwarf;
+	int ti; 
+	int na;
+    Unit ichi;
+    int price;
+    
+    vector<vector<bool> > visited(60, vector<bool>(60,false));
+    
+
+	priority_queue< p, vector<p>, greater<p> > q;
+
+    
+    vector<int> d = dwarves(me());
+    
+    int cuat =d.size();
+    
+    for(int i=0; i<1; i++){
+        
+        ichi= unit(d[i]);
+        ti=ichi.pos.i;
+        na=ichi.pos.j;
+        q.push(make_pair(0,make_pair(ti,na)));
+        bambam[ti][na]=0;
+        
+    }
+    
+
+    
+    
+
+	while(not q.empty()){
+
+		p now = q.top();
+		q.pop();
+		int xnow=now.second.first;
+		int ynow=now.second.second;
+        int price=now.first;
+
+		if(!visited[xnow][ynow]){
+
+			visited[xnow][ynow] =true;
+
+			for(int i=0; i< 4; i++){
+
+				//adj;
+				if(pos_ok(xnow+ix[i], ynow+wai[i])){
+					//if pos okey
+                   
+					int xaux=xnow+ix[i];
+					int yaux=ynow+wai[i];
+                    int cost;
+					
+					Cell c =cell (xaux, yaux);
+                  
+                    if(c.type==Cave or c.type==Outside){
+                        
+                        bool hey=false;
+                        
+                        if(c.id!=-1){
+                            
+                            Unit cool= unit(c.id);
+                            if(cool.type==Dwarf and cool.player==me()){
+                                cost=0;
+                                hey=true;
+                            }
+                        }
+                
+                         if(not hey) cost=price+1;
+                       
+                        if(bambam[xaux][yaux] > cost ){
+    
+                            bambam[xaux][yaux] = cost;
+
+                            q.push(make_pair(cost,make_pair(xaux,yaux) ));
+                        
+                        }
+
+					}
 				}
 			}
 		}
-	}
- 	
- 	
- }
- 
- void seguir(Pos p, int id ){
- 	
- 	VI D = dwarves(me());
-	int x=p.i;
-	int y=p.j;
- 		 
- 	 for(int i: D){
+    }
+    
+    
+    int danger= balrog_id ();
+    Unit ew = unit(danger);
+    Pos mortal= ew.pos;
+    int mortalx= mortal.i;
+    int mortaly=mortal.j;
+    for(int i=0; i<4; i++) bambam[mortalx+ix[i]][mortaly+wai[i]]=inf; 
+    int ixx[]={-1, 1,-1,1};
+    int waii[]={1,-1,-1,1};	
+    for(int i=0; i<4; i++) bambam[mortalx+ixx[i]][mortaly+waii[i]]=inf; 
+    //poner mas rango al balrog
+    int ixxx[]={ -2,2,-2,2,2,-2,0,0,-1,+1,-1,+1,2,2,-2,-2};
+	int waiii[]={-2,2,2,-2,0,0,2,-2,2,2,-2,-2,1,-1,1,-1};	
+    for(int i=0; i<16; i++) bambam[mortalx+ixxx[i]][mortaly+waiii[i]]=inf;
 
-		Pos p2=unit(i).pos;
-		int x2=p2.i;
-		int y2=p2.j; //posicion del dwarf
-		if(x2<x+8 and x2>x-8 and y2<y+8 and y2>y-8){
+ }
+ void gogo(vector<vector< int > >& bambam, Pos& p, int& id){
+
+	
+	int const inf = numeric_limits<int>::max();
+	
+	int min=inf;
+	int max=0;
+    int posi;
+    
+	//int ygo=0;
+	for ( int i=0; i<4; i=i+2){
+
 			
-				
-			vector<vector<pair<int,int> > > rec(64, vector<pair<int,int> > (64,make_pair(-1,-1)));
-			bool yes=false;
-			persecucion(p,x2,y2,yes,rec); //mirar si puede llegar al dwarf
-				
-			if(yes){ //se mueve hacia el dwarf en teoria
-				
-				stack< pair<int,int> > res;
-				while(rec[x2][y2]!=make_pair(-1,-1)){
-					res.push(make_pair(x2,y2));
-					pair<int,int> aux= rec[x2][y2];
-					x2=aux.first;
-					y2=aux.second;
-
-
-				}
-				pair<int,int> aux=res.top();
-				
-				if(aux.first==(x-1)) command(id, Left);
-				else if(aux.first==(x+1)) command(id, Right);
-				else if(aux.second==(y-1)) command (id, Bottom);
-				else  command (id, Top);	
-				return;
+		if(pos_ok(p+Dir(i)) and is_rock(p+Dir(i))){
+            
+            posi=bambam[(p+Dir(i)).i][(p+Dir(i)).j];
+            
+            
+			if(posi < min){
+              
+				min= posi;
+				max = i;
+                
 			}
-
-		}		
-
-	 }
-	 command(id, Dir(2*random(0, 3))); //si no hay ningun dwarf cerca
- }
+		}
+	}
+       if(pos_ok(p+Dir(max))){ 
+        //cout << min << " " << Dir(max) << endl;
+        command(id, Dir(max));
+        return;
+       }
+}
 
 void move_wizards() {
+    
+    int const inf = numeric_limits<int>::max();
+    
+    vector<vector<int> > bambam(60,vector<int>(60,inf));
+	power(bambam);
+    
+    for(int i=0; i<60; i++){
+     for(int j=0; j<60; j++){
+         
+         if(bambam[i][j]!=inf)cout << bambam[i][j] << " " ;
+         if(bambam[i][j]<10) cout << " ";
+         else cout << "XX" << " " ;
+     }
+     cout << endl;
+        
+    }
+    cout << endl;
+    cout << endl;
+    cout << endl;
+    cout << endl;
 
   vector<int> W = wizards(me());
   for (int id : W) {
 	
         Pos p = unit(id).pos;
 	
-		int x= p.i; //pos del mago
-		int y=p.j;
 		
-		bool yes;
+		//las dos funciones de magos estan mal
+		bool yes=false;
 		lados_mago(p,yes,id);
-		if(not yes)seguir(p,id);
-	
+        if(not yes){
+            
+           
+            gogo(bambam,p,id);
+          
+            
+        } 
    }
  }
 
